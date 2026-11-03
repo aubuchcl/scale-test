@@ -41,7 +41,7 @@
       "file": "stacks/loadgen.json",
       "environment": "loadgen",
       "variables": {
-        "target-url": "http://scale-test.cycle.chrisaubuchon.com"
+        "target-url": "https://scale-test.cycle.chrisaubuchon.com"
       }
     }
   },

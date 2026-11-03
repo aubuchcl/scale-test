@@ -30,6 +30,7 @@ npm install
 npm run validate    # checks stacks, scenarios and the group file against Cycle's API spec (no credentials needed)
 npm run preflight   # read-only: credentials, hub, cluster, servers, group, environments, DNS
 npm run status      # what's running in the lab and its estimated hourly cost
+npm run apply -- s1-cpu            # dry run: shows a scenario's scaling change to the app; add --yes to apply
 npm run teardown -- --lab          # dry run: lists what it would delete
 npm run teardown -- --lab --yes    # deletes environments, stacks, then servers
 ```
@@ -105,4 +106,5 @@ Found while building against the API spec at `2bd5dd1`:
 Found on the first real builds:
 
 - Cycle rejects a restart `delay` under 5s, even with `condition: "never"`; the schema allows any duration. `validate` now checks for it.
+- With TLS on a linked record, the load balancer redirects `http://` to `https://`, so an `http://` load test makes two round trips per request (found in the smoke test: k6 counted 2,956 requests, the app 1,477). The loadgen targets `https://`.
 - `build_file` must start with `/` ("Build file must begin with a '/'"); the schema doesn't say. The first build used a relative `context_dir: "app"` with no `build_file` and failed inside buildkit with no detail. The stacks now build from the repo root with `build_file` `/app/Dockerfile` and `/loadgen/Dockerfile`, and `validate` checks both paths start with `/`.

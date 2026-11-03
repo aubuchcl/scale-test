@@ -12,6 +12,7 @@
     "status": "tsx scripts/status.ts",
     "validate": "tsx scripts/validate.ts",
     "stacks": "tsx scripts/stacks.ts",
+    "apply": "tsx scripts/apply.ts",
     "teardown": "tsx scripts/teardown.ts",
     "typecheck": "tsc --noEmit"
   },
