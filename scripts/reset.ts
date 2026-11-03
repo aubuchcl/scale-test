@@ -6,7 +6,7 @@
 //   npm run reset -- --yes deletes them
 
 import { parseArgs } from "node:util";
-import { must } from "./lib/api.js";
+import { must, mustDelete } from "./lib/api.js";
 import { API_URL, cycle } from "./lib/config.js";
 import { findContainer, idTime, listInstances } from "./lib/containers.js";
 import { jobIdOf, waitForJob } from "./lib/jobs.js";
@@ -39,7 +39,7 @@ async function main(): Promise<void> {
     return;
   }
   for (const i of extras) {
-    const body = await must(
+    const body = await mustDelete(
       `delete instance ${i.id}`,
       cycle().DELETE("/v1/containers/{containerId}/instances/{instanceId}", {
         params: { path: { containerId: app.id, instanceId: i.id } },

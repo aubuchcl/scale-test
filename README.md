@@ -28,6 +28,7 @@ The key needs to manage servers, environments, stacks, containers, DNS records a
 ```sh
 npm install
 npm run validate    # checks stacks, scenarios and the group file against Cycle's API spec (no credentials needed)
+npm test            # unit tests for the API retry rules (no credentials needed)
 npm run preflight   # read-only: credentials, hub, cluster, servers, group, environments, DNS
 npm run status      # what's running in the lab and its estimated hourly cost
 npm run apply -- s1-cpu            # dry run: shows a scenario's scaling change to the app; add --yes to apply
@@ -111,7 +112,7 @@ Found running the tests:
 - **Cycle restarted a container whose restart policy is `never`.** In s1 the loadgen exited cleanly at 18:00:43 and Cycle started it again at 18:10:16 (`CYCLE_AUTO_START=yes`), re-running the load. The runner now stops the loadgen explicitly after each run and fails a `load_ran_once` check if it runs again.
 - **The custom (webhook) threshold left the last auto-scaled instance behind** (s0), even when answering 0; CPU scaling (s1) removed it normally.
 - **The RAM threshold follows container memory, not what the app thinks it holds.** In s2's first run the app's live allocations were 20–50 MB per instance, but Go kept freed memory, so container memory averaged ~131 MB (peak ~214 MB) against the 80M threshold and Cycle correctly kept adding instances (1 → 4). The app now returns freed memory to the OS straight away (`debug.FreeOSMemory`), so container memory tracks the load.
-- **A Cycle update mid-run** (agent/compute `2026.11.02.4` → `2026.11.03.1`) made the API unreachable for a couple of minutes; workloads were not restarted. The runner now retries API reads for up to 5 minutes and keeps trying to stop the loadgen, instead of ending the run on the first failure.
+- **A Cycle update mid-run** (agent/compute `2026.11.02.4` → `2026.11.03.1`) made the API unreachable for a couple of minutes; workloads were not restarted. Every API call now waits and retries through outages of up to 5 minutes (2s, 4s, 8s… up to 30s apart): reads, container tasks and deletes always, creates only when the request clearly never reached Cycle, so nothing is duplicated. A delete that turns out to have already happened counts as done, and the runner's waits treat a failed check as "not yet". `npm test` covers the retry rules.
 
 Found on the first real builds:
 

@@ -79,11 +79,30 @@ function gitCommit(): string {
   }
 }
 
+/**
+ * Poll check() until it's true or timeoutMs passes. A check that throws
+ * (the API briefly unreachable, say) counts as "not yet" rather than ending
+ * the run; the last error is reported if the wait times out.
+ */
 async function waitFor(what: string, check: () => Promise<boolean>, timeoutMs: number): Promise<void> {
   const until = Date.now() + timeoutMs;
-  while (!(await check())) {
+  let lastError: string | undefined;
+  while (true) {
+    try {
+      if (await check()) {
+        return;
+      }
+      lastError = undefined;
+    } catch (err) {
+      if (err instanceof Aborted || err instanceof TimedOut) {
+        throw err;
+      }
+      lastError = err instanceof Error ? err.message : String(err);
+      console.log(`  (check failed while waiting for ${what}: ${lastError}; trying again)`);
+    }
     if (Date.now() > until) {
-      throw new Error(`timed out after ${fmtMs(timeoutMs)} waiting for ${what}`);
+      const why = lastError ? `; last error: ${lastError}` : "";
+      throw new Error(`timed out after ${fmtMs(timeoutMs)} waiting for ${what}${why}`);
     }
     await sleep(POLL_MS);
   }

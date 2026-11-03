@@ -29,3 +29,19 @@ export async function must<T>(what: string, call: Promise<Result<T>>): Promise<T
   }
   return data;
 }
+
+/**
+ * Like must(), for deletes: a 404 means it's already gone, which counts as
+ * done. That matters when a delete is retried through an outage and the
+ * first attempt had in fact gone through. Returns undefined in that case.
+ */
+export async function mustDelete<T>(what: string, call: Promise<Result<T>>): Promise<T | undefined> {
+  const { data, error, response } = await call;
+  if (response.status === 404) {
+    return undefined;
+  }
+  if (error !== undefined || data === undefined) {
+    throw new ApiError(what, response.status, describeError(error));
+  }
+  return data;
+}

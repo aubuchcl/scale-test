@@ -10,7 +10,7 @@
 // what's left (with its hourly cost) if anything could not be removed.
 
 import { parseArgs } from "node:util";
-import { must } from "./lib/api.js";
+import { must, mustDelete } from "./lib/api.js";
 import { API_URL, cycle } from "./lib/config.js";
 import { findAutoScaleGroup, findEnvironment, formatCost, labServers, type ServerView } from "./lib/inventory.js";
 import { jobIdOf, sleep, waitForJob } from "./lib/jobs.js";
@@ -105,7 +105,7 @@ function printPlan(plan: Plan): number {
 }
 
 async function deleteEnvironment(env: { id: string; identifier: string }): Promise<void> {
-  const body = await must(
+  const body = await mustDelete(
     `delete environment ${env.identifier}`,
     cycle().DELETE("/v1/environments/{environmentId}", { params: { path: { environmentId: env.id } } }),
   );
@@ -116,7 +116,7 @@ async function deleteEnvironment(env: { id: string; identifier: string }): Promi
 }
 
 async function deleteStack(stack: { id: string; identifier: string }): Promise<void> {
-  const body = await must(
+  const body = await mustDelete(
     `delete stack ${stack.identifier}`,
     cycle().DELETE("/v1/stacks/{stackId}", { params: { path: { stackId: stack.id } } }),
   );
@@ -134,7 +134,7 @@ async function deleteServer(view: ServerView): Promise<void> {
   while (true) {
     attempt++;
     try {
-      const body = await must(
+      const body = await mustDelete(
         name,
         cycle().DELETE("/v1/infrastructure/servers/{serverId}", { params: { path: { serverId: view.server.id } } }),
       );
@@ -232,7 +232,7 @@ async function main(): Promise<void> {
   const group = plan.group;
   if (group !== undefined) {
     await attempt(`delete auto-scale group ${group.identifier}`, async () => {
-      await must(
+      await mustDelete(
         `delete auto-scale group ${group.identifier}`,
         cycle().DELETE("/v1/infrastructure/auto-scale/groups/{groupId}", { params: { path: { groupId: group.id } } }),
       );
