@@ -30,6 +30,8 @@ npm install
 npm run validate    # checks stacks, scenarios and the group file against Cycle's API spec (no credentials needed)
 npm run preflight   # read-only: credentials, hub, cluster, servers, group, environments, DNS
 npm run status      # what's running in the lab and its estimated hourly cost
+npm run teardown -- --lab          # dry run: lists what it would delete
+npm run teardown -- --lab --yes    # deletes environments, stacks, then servers
 ```
 
 ## How the lab is laid out on Cycle
@@ -77,7 +79,9 @@ Every response carries `X-Instance-Id` and `X-Server-Id`, and the app logs a `st
 
 A scenario file holds the `scale` block to apply (the API's `ContainerScale` format), optional `resources`, the `load`, how long to keep watching afterwards, a hard `timeout`, and `expect`ations (`scale_up_within`, `peak_at_most`, `respects_min_ttl`, `back_to_base_within`, `servers_added_at_least`, …). `npm run validate` checks all of it.
 
-## Runs, records and teardown (being built)
+## Runs, records and teardown
+
+`npm run teardown` works today; setup, the scenario runner and the records below are being built.
 
 Each run writes to `results/<run-id>/` as it goes: `manifest.json`, `ledger.json` (every resource it created), `steps.ndjson` (every API call), `timeline.ndjson` (instances and servers every 15s), `events.ndjson`, `telemetry.ndjson`, app and k6 logs, `summary.json` and `report.md`. Records stay local and git-ignored.
 
