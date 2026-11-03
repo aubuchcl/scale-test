@@ -211,7 +211,13 @@ async function main(): Promise<number> {
       });
     }
 
-    recorder = new Recorder(lab, app.id, runDir, scenario.load.type === "scaler");
+    recorder = new Recorder(
+      lab,
+      app.id,
+      runDir,
+      scenario.load.type === "scaler",
+      scenario.load.type === "loadgen" ? loadgen.id : undefined,
+    );
     recorder.start(SAMPLE_EVERY_MS);
     await sleep(SAMPLE_EVERY_MS);
 
@@ -234,6 +240,10 @@ async function main(): Promise<number> {
       );
       loadgenStarted = false;
       loadEnd = new Date();
+      // k6 has exited, but Cycle has been seen restarting this container on its
+      // own (s1, despite restart condition "never"). An explicit stop sets the
+      // container's desired state to stopped.
+      await step("stop loadgen (explicitly, so Cycle doesn't restart it)", () => containerAction(loadgen as Container, "stop"));
     } else if (load.type === "scaler") {
       loadStart = new Date();
       const steps = [...load.steps].sort((a, b) => durationMs(a.after) - durationMs(b.after));
@@ -318,6 +328,18 @@ async function main(): Promise<number> {
   if (status === "PASS") {
     const minTtl = scenario.scale?.instances?.min_ttl ?? app?.config.scale?.instances?.min_ttl;
     checks = evaluate(scenario.expect, samples, { loadStart, loadEnd, base, minTtl });
+    if (scenario.load.type === "loadgen") {
+      const after = loadEnd.getTime() + Math.min(30_000, 5 * SAMPLE_EVERY_MS);
+      const rerun = samples.find(
+        (x) => new Date(x.at).getTime() > after && x.loadgen !== undefined && "state" in x.loadgen && x.loadgen.state !== "stopped",
+      );
+      checks.push({
+        name: "load_ran_once",
+        expected: "loadgen stays stopped after its run",
+        observed: rerun === undefined ? "stayed stopped" : `loadgen ${rerun.loadgen && "state" in rerun.loadgen ? rerun.loadgen.state : "?"} again at ${rerun.at.slice(11, 19)}`,
+        pass: rerun === undefined,
+      });
+    }
     if (checks.some((c) => c.pass === false)) {
       status = "FAIL";
     }

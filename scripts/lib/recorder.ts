@@ -1,6 +1,6 @@
 import { appendFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
-import { idTime, listInstances } from "./containers.js";
+import { getContainer, idTime, listInstances } from "./containers.js";
 import { labServers } from "./inventory.js";
 import type { LabConfig } from "./lab.js";
 
@@ -12,6 +12,7 @@ export interface Sample {
   };
   servers: { id: string; hostname: string; role: string; state: string; created?: string }[];
   scaler?: { instances?: number; calls?: number; last_call?: unknown } | { error: string };
+  loadgen?: { state: string } | { error: string };
   errors?: string[];
 }
 
@@ -41,6 +42,7 @@ export class Recorder {
     private readonly appContainerId: string,
     runDir: string,
     private readonly watchScaler: boolean,
+    private readonly loadgenId?: string,
   ) {
     this.out = new Ndjson(join(runDir, "timeline.ndjson"));
   }
@@ -100,6 +102,14 @@ export class Recorder {
         sample.scaler = { instances: body.instances, calls: body.calls, last_call: body.last_call };
       } catch (err) {
         sample.scaler = { error: err instanceof Error ? err.message : String(err) };
+      }
+    }
+    if (this.loadgenId !== undefined) {
+      try {
+        const loadgen = await getContainer(this.loadgenId);
+        sample.loadgen = { state: loadgen.state.current };
+      } catch (err) {
+        sample.loadgen = { error: err instanceof Error ? err.message : String(err) };
       }
     }
     if (errors.length > 0) {

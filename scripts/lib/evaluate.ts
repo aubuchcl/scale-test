@@ -118,6 +118,20 @@ export function evaluate(expect: Record<string, unknown>, samples: Sample[], tim
     }
     checks.push({ name, expected, observed, pass });
   }
+
+  // Implicit: once back at base after the load, the app should stay there.
+  if ("back_to_base_within" in expect) {
+    const backIndex = ok.findIndex((s) => t(s) >= end && s.app.count === timing.base);
+    if (backIndex >= 0) {
+      const rose = ok.slice(backIndex).find((s) => s.app.count > timing.base);
+      checks.push({
+        name: "stayed_at_base",
+        expected: `${timing.base} after returning to base`,
+        observed: rose === undefined ? "stayed" : `rose to ${rose.app.count} at ${rose.at.slice(11, 19)} with no load running`,
+        pass: rose === undefined,
+      });
+    }
+  }
   return checks;
 }
 

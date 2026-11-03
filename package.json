@@ -14,6 +14,7 @@
     "stacks": "tsx scripts/stacks.ts",
     "apply": "tsx scripts/apply.ts",
     "scenario": "tsx scripts/scenario.ts",
+    "collect": "tsx scripts/collect.ts",
     "reset": "tsx scripts/reset.ts",
     "teardown": "tsx scripts/teardown.ts",
     "typecheck": "tsc --noEmit"

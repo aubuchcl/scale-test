@@ -23,7 +23,7 @@ results/          run records (git-ignored, see below)
 
 The API URL is fixed to `https://api.dev.cycle.io` in `scripts/lib/config.ts`. The key never reaches a log or a record.
 
-The key needs to manage servers, environments, stacks, containers, DNS records and auto-scale groups. Preflight can only check read access, so give the key all of these up front; otherwise a missing delete permission only shows up at teardown.
+The key needs to manage servers, environments, stacks, containers, DNS records and auto-scale groups, and the `monitoring-logs-view` capability so runs can collect logs. Preflight can only check read access, so give the key all of these up front; otherwise a missing delete permission only shows up at teardown.
 
 ```sh
 npm install
@@ -33,6 +33,7 @@ npm run status      # what's running in the lab and its estimated hourly cost
 npm run apply -- s1-cpu            # dry run: shows a scenario's scaling change to the app; add --yes to apply
 npm run scenario -- s1-cpu         # runs a scenario end to end and writes results/<run-id>/
 npm run reset                      # dry run: lists leftover auto-scaled app instances; add --yes to remove them
+npm run collect -- <run-id>        # re-pulls a past run's logs (needs monitoring-logs-view on the key)
 npm run teardown -- --lab          # dry run: lists what it would delete
 npm run teardown -- --lab --yes    # deletes environments, stacks, then servers
 ```
@@ -104,6 +105,11 @@ Found while building against the API spec at `2bd5dd1`:
 - The webhook is documented as a GET (portal) and a POST (`WebhookURL` in the API spec).
 - `ContainerScale`'s description reads "Network configuration for a container".
 - The CPU threshold is measured against the CPU **limit**, so the app always has one set.
+
+Found running the tests:
+
+- **Cycle restarted a container whose restart policy is `never`.** In s1 the loadgen exited cleanly at 18:00:43 and Cycle started it again at 18:10:16 (`CYCLE_AUTO_START=yes`), re-running the load. The runner now stops the loadgen explicitly after each run and fails a `load_ran_once` check if it runs again.
+- **The custom (webhook) threshold left the last auto-scaled instance behind** (s0), even when answering 0; CPU scaling (s1) removed it normally.
 
 Found on the first real builds:
 
