@@ -268,16 +268,31 @@ async function main(): Promise<number> {
     } else {
       status = "ERROR";
     }
+    if (loadEnd.getTime() < loadStart.getTime()) {
+      loadEnd = new Date();
+    }
     error = err instanceof Error ? err.message : String(err);
     console.log(`\n${status}: ${error}`);
   }
 
   // ---- always: stop load, record, collect, grade ----
   if (loadgenStarted && loadgen !== undefined) {
-    try {
-      await containerAction(loadgen, "stop");
-    } catch (err) {
-      console.log(`could not stop loadgen: ${String(err)}`);
+    // Stopping is safe to repeat, so keep trying through an API outage:
+    // a loadgen left running keeps loading the lab (and Cycle may restart it).
+    let stopped = false;
+    for (let attempt = 1; attempt <= 6 && !stopped; attempt++) {
+      try {
+        await containerAction(loadgen, "stop");
+        stopped = true;
+      } catch (err) {
+        console.log(`could not stop loadgen (attempt ${attempt}/6): ${String(err)}`);
+        if (attempt < 6) {
+          await new Promise((resolve) => setTimeout(resolve, 30_000));
+        }
+      }
+    }
+    if (!stopped) {
+      console.log("THE LOADGEN MAY STILL BE RUNNING. Stop it in the portal or ask Claude to stop it.");
     }
   }
   let samples: Sample[] = [];
@@ -419,7 +434,17 @@ function renderReport(r: {
   lines.push("## App instances over time (UTC)", "");
   let last = -1;
   let lastBurst = -1;
+  let inGap = false;
   for (const s of r.samples) {
+    if (s.errors?.some((e) => e.startsWith("instances"))) {
+      if (!inGap) {
+        lines.push(`- ${hhmmss(s.at)}  (API unreachable; no data)`);
+        inGap = true;
+        last = -1;
+      }
+      continue;
+    }
+    inGap = false;
     const burst = s.servers.filter((x) => x.role === "burst" && x.state !== "deleted").length;
     if (s.app.count !== last || burst !== lastBurst) {
       const perServer = new Map<string, number>();

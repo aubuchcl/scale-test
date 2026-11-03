@@ -110,6 +110,8 @@ Found running the tests:
 
 - **Cycle restarted a container whose restart policy is `never`.** In s1 the loadgen exited cleanly at 18:00:43 and Cycle started it again at 18:10:16 (`CYCLE_AUTO_START=yes`), re-running the load. The runner now stops the loadgen explicitly after each run and fails a `load_ran_once` check if it runs again.
 - **The custom (webhook) threshold left the last auto-scaled instance behind** (s0), even when answering 0; CPU scaling (s1) removed it normally.
+- **The RAM threshold follows container memory, not what the app thinks it holds.** In s2's first run the app's live allocations were 20–50 MB per instance, but Go kept freed memory, so container memory averaged ~131 MB (peak ~214 MB) against the 80M threshold and Cycle correctly kept adding instances (1 → 4). The app now returns freed memory to the OS straight away (`debug.FreeOSMemory`), so container memory tracks the load.
+- **A Cycle update mid-run** (agent/compute `2026.11.02.4` → `2026.11.03.1`) made the API unreachable for a couple of minutes; workloads were not restarted. The runner now retries API reads for up to 5 minutes and keeps trying to stop the loadgen, instead of ending the run on the first failure.
 
 Found on the first real builds:
 

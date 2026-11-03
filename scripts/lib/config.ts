@@ -1,4 +1,5 @@
 import { getClient } from "@cycleplatform/api-client-typescript";
+import { retryingFetch } from "./retryFetch.js";
 
 // The lab runs against Cycle's dev platform.
 export const API_URL = "https://api.dev.cycle.io";
@@ -26,6 +27,8 @@ export function cycle(): CycleClient {
       baseUrl: API_URL,
       apiKey: requireEnv("DEVAPI"),
       hubId: requireEnv("DEVHUBID"),
+      // Reads retry through brief API outages (up to 5 minutes by default).
+      fetch: retryingFetch({ maxWaitMs: Number(process.env.SCALE_TEST_API_RETRY_MS ?? 5 * 60_000) }),
     });
   }
   return client;

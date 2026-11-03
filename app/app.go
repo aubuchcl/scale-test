@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"log/slog"
 	"net/http"
+	"runtime/debug"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -179,7 +180,16 @@ func (a *app) release(allocID, mb int64) {
 	a.allocMu.Unlock()
 	if ok {
 		a.allocatedMB.Add(-mb)
+		returnMemoryToOS()
 	}
+}
+
+// returnMemoryToOS runs a GC and hands freed pages back to the kernel right
+// away. Without it Go keeps released memory, so the container's memory (what
+// Cycle's RAM threshold measures) stays at its peak instead of following the
+// load; in s2 that kept the app above the threshold and it scaled to 4.
+func returnMemoryToOS() {
+	debug.FreeOSMemory()
 }
 
 // handleFree releases every held allocation at once.
@@ -189,6 +199,7 @@ func (a *app) handleFree(w http.ResponseWriter, r *http.Request) {
 	a.allocations = map[int64][]byte{}
 	a.allocMu.Unlock()
 	a.allocatedMB.Store(0)
+	returnMemoryToOS()
 	writeJSON(w, http.StatusOK, map[string]any{
 		"instance_id": a.id.InstanceID,
 		"freed":       freed,
