@@ -13,6 +13,7 @@
     "validate": "tsx scripts/validate.ts",
     "stacks": "tsx scripts/stacks.ts",
     "apply": "tsx scripts/apply.ts",
+    "scenario": "tsx scripts/scenario.ts",
     "teardown": "tsx scripts/teardown.ts",
     "typecheck": "tsc --noEmit"
   },

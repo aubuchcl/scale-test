@@ -31,6 +31,7 @@ npm run validate    # checks stacks, scenarios and the group file against Cycle'
 npm run preflight   # read-only: credentials, hub, cluster, servers, group, environments, DNS
 npm run status      # what's running in the lab and its estimated hourly cost
 npm run apply -- s1-cpu            # dry run: shows a scenario's scaling change to the app; add --yes to apply
+npm run scenario -- s1-cpu         # runs a scenario end to end and writes results/<run-id>/
 npm run teardown -- --lab          # dry run: lists what it would delete
 npm run teardown -- --lab --yes    # deletes environments, stacks, then servers
 ```
@@ -82,7 +83,7 @@ A scenario file holds the `scale` block to apply (the API's `ContainerScale` for
 
 ## Runs, records and teardown
 
-`npm run teardown` works today; setup, the scenario runner and the records below are being built.
+`npm run scenario -- <id>` applies the scenario's settings, waits for the app to be back to its base instance count, records every 15s, runs the load (loadgen profile, or scaler answers for s0), keeps watching for `observe_after_load`, then collects logs and Cycle's activity and grades the expectations. Exit code 0 PASS, 1 FAIL, 2 ERROR, 3 ABORTED (Ctrl-C). Lab setup is still done by hand with the MCP; `npm run teardown` removes it.
 
 Each run writes to `results/<run-id>/` as it goes: `manifest.json`, `ledger.json` (every resource it created), `steps.ndjson` (every API call), `timeline.ndjson` (instances and servers every 15s), `events.ndjson`, `telemetry.ndjson`, app and k6 logs, `summary.json` and `report.md`. Records stay local and git-ignored.
 
@@ -106,6 +107,6 @@ Found while building against the API spec at `2bd5dd1`:
 Found on the first real builds:
 
 - Cycle rejects a restart `delay` under 5s, even with `condition: "never"`; the schema allows any duration. `validate` now checks for it.
-- **The stack file's `scaling` block is silently ignored.** The published stack spec names it `scaling`; the build accepts it, but the deployed container's `config.scale` is `null` (the container API calls it `scale`). Scenarios set `scale` through the API with `npm run apply` instead. Still to test: whether `scale` works in a stack file.
+- **Open: the stack file's `scaling` block didn't reach the container.** After deploying `asl-target-stack` (stack `6aea102e5f30be404d5e475d`, build `6aea11bf5f30be404d5e476d`, deployed through the Cycle MCP), the app's `config.scale` was `null`. Being investigated; the stack keeps its `scaling` block so it takes effect once this is resolved. Until then, `npm run apply` sets the same settings through the API.
 - With TLS on a linked record, the load balancer redirects `http://` to `https://`, so an `http://` load test makes two round trips per request (found in the smoke test: k6 counted 2,956 requests, the app 1,477). The loadgen targets `https://`.
 - `build_file` must start with `/` ("Build file must begin with a '/'"); the schema doesn't say. The first build used a relative `context_dir: "app"` with no `build_file` and failed inside buildkit with no detail. The stacks now build from the repo root with `build_file` `/app/Dockerfile` and `/loadgen/Dockerfile`, and `validate` checks both paths start with `/`.
