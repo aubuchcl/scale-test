@@ -5,3 +5,7 @@ node_modules/
 results/
 *.log
 .env
+
+# macOS / Google Drive folder icon files (named "Icon" + carriage return)
+Icon?
+.DS_Store
