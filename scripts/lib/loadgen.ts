@@ -26,6 +26,7 @@ export const LOADGEN_KNOBS = [
   "VUS",
   "HOLD_S",
   "KB",
+  "REUSE_CONNECTIONS",
 ] as const;
 
 /** Profiles in main.js that send RATE requests per TIME_UNIT. */

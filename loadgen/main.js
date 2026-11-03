@@ -13,6 +13,11 @@
 //   connections  /hold            -> network-connections (one open connection per VU)
 //   throughput   /bytes           -> network-throughput
 //
+// Every request opens a new connection (REUSE_CONNECTIONS=1 turns keep-alive
+// back on). Cycle's load balancer keeps a connection on one instance, so with
+// k6's few reused connections, instances added mid-test got no traffic (s1, s3).
+// New connections spread the load the way many separate clients would.
+//
 // Results are printed between K6_SUMMARY_BEGIN / K6_SUMMARY_END markers so the
 // collector can pull them out of the container log before teardown.
 
@@ -105,6 +110,7 @@ if (profile === undefined) {
 export const options = {
   scenarios: { [SCENARIO]: profile.executor },
   discardResponseBodies: true,
+  noConnectionReuse: str("REUSE_CONNECTIONS", "0") !== "1",
   summaryTrendStats: ["avg", "min", "med", "p(90)", "p(95)", "p(99)", "max"],
 };
 
