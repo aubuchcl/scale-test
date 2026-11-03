@@ -193,12 +193,22 @@ async function main(): Promise<number> {
       if (scenario.load.type === "scaler") {
         await step(`scaler answers ${base} (base)`, () => setScaler(base));
       }
-      await step(`wait for app to be back to ${base} instance(s)`, () =>
-        waitFor(`${base} instance(s)`, async () => {
-          const live = await listInstances((app as Container).id);
-          return live.filter((i) => i.state.current === "running").length === base;
-        }, 30 * 60_000),
-      );
+      await step(`wait for app to be back to ${base} instance(s)`, async () => {
+        try {
+          await waitFor(`${base} instance(s)`, async () => {
+            const live = await listInstances((app as Container).id);
+            return live.filter((i) => i.state.current === "running").length === base;
+          }, 10 * 60_000);
+        } catch (err) {
+          if (err instanceof Aborted || err instanceof TimedOut) {
+            throw err;
+          }
+          throw new Error(
+            `the app didn't get back to ${base} instance(s) within 10m. If extra auto-scaled instances are stuck ` +
+              `(as in s0), run \`npm run reset\` to see them and \`npm run reset -- --yes\` to remove them, then rerun.`,
+          );
+        }
+      });
     }
 
     recorder = new Recorder(lab, app.id, runDir, scenario.load.type === "scaler");
@@ -328,6 +338,15 @@ async function main(): Promise<number> {
   );
   const report = renderReport({ runId, scenario, status, error, checks, notes, samples, manifest, loadStart, loadEnd, k6 });
   writeFileSync(join(runDir, "report.md"), report);
+
+  // One current report per test, in one place; the aggregate report reads these.
+  const reportsDir = repoPath("results/reports");
+  mkdirSync(reportsDir, { recursive: true });
+  writeFileSync(join(reportsDir, `${scenario.id}.md`), `${report}\nFull records: \`results/${runId}/\`\n`);
+  writeFileSync(
+    join(reportsDir, `${scenario.id}.json`),
+    JSON.stringify({ run_id: runId, scenario: scenario.id, title: scenario.title, status, error, checks, notes, finished_at: manifest.finished_at }, null, 2) + "\n",
+  );
 
   console.log(`\n${report}`);
   if (status === "ERROR" || status === "ABORTED") {

@@ -32,6 +32,7 @@ npm run preflight   # read-only: credentials, hub, cluster, servers, group, envi
 npm run status      # what's running in the lab and its estimated hourly cost
 npm run apply -- s1-cpu            # dry run: shows a scenario's scaling change to the app; add --yes to apply
 npm run scenario -- s1-cpu         # runs a scenario end to end and writes results/<run-id>/
+npm run reset                      # dry run: lists leftover auto-scaled app instances; add --yes to remove them
 npm run teardown -- --lab          # dry run: lists what it would delete
 npm run teardown -- --lab --yes    # deletes environments, stacks, then servers
 ```
@@ -85,7 +86,7 @@ A scenario file holds the `scale` block to apply (the API's `ContainerScale` for
 
 `npm run scenario -- <id>` applies the scenario's settings, waits for the app to be back to its base instance count, records every 15s, runs the load (loadgen profile, or scaler answers for s0), keeps watching for `observe_after_load`, then collects logs and Cycle's activity and grades the expectations. Exit code 0 PASS, 1 FAIL, 2 ERROR, 3 ABORTED (Ctrl-C). Lab setup is still done by hand with the MCP; `npm run teardown` removes it.
 
-Each run writes to `results/<run-id>/` as it goes: `manifest.json`, `ledger.json` (every resource it created), `steps.ndjson` (every API call), `timeline.ndjson` (instances and servers every 15s), `events.ndjson`, `telemetry.ndjson`, app and k6 logs, `summary.json` and `report.md`. Records stay local and git-ignored.
+Each test's latest report is `results/reports/<test>.md` (with a `.json` summary next to it); an aggregate report across tests will be built from those. Each run writes to `results/<run-id>/` as it goes: `manifest.json`, `ledger.json` (every resource it created), `steps.ndjson` (every API call), `timeline.ndjson` (instances and servers every 15s), `events.ndjson`, `telemetry.ndjson`, app and k6 logs, `summary.json` and `report.md`. Records stay local and git-ignored.
 
 - A scenario that passes or fails moves on to the next one after a reset; the session tears down at the end unless `--keep` is passed.
 - On a harness ERROR, records are saved and everything stays up for debugging; tear it down yourself when done.
