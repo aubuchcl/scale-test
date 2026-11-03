@@ -30,6 +30,11 @@ async function step(name: string, fn: () => Promise<void>): Promise<void> {
   }
 }
 
+/** Zone origins may come back with a trailing dot or different case. */
+function normalizeOrigin(origin: string): string {
+  return origin.trim().toLowerCase().replace(/\.$/, "");
+}
+
 /** fetch() hides the useful part (DNS, TLS, refused) in err.cause. */
 function errorText(err: unknown): string {
   if (!(err instanceof Error)) {
@@ -115,12 +120,18 @@ async function main(): Promise<void> {
       "list dns zones",
       cycle().GET("/v1/dns/zones", { params: { query: { page: { size: 100 } } } }),
     );
-    const zone = zones.data.find((z) => z.origin === lab.dns.zone);
+    const wanted = normalizeOrigin(lab.dns.zone);
+    const zone = zones.data.find((z) => normalizeOrigin(z.origin) === wanted);
     if (zone === undefined) {
-      report("warn", `DNS zone ${lab.dns.zone} not found on the hub; the app and scaler need it for their public hostnames`);
+      const seen = zones.data.map((z) => `${z.origin} (${z.state.current})`).join(", ");
+      report(
+        "warn",
+        `DNS zone ${lab.dns.zone} not visible to this API key; the app and scaler need it for their public hostnames. ` +
+          `The key sees ${zones.data.length} zone(s): ${seen || "none"}`,
+      );
       return;
     }
-    report("ok", `DNS zone ${lab.dns.zone} exists`);
+    report("ok", `DNS zone ${lab.dns.zone} exists (${zone.hosted ? "hosted" : "not hosted"}, ${zone.state.current})`);
   });
 
   report(
