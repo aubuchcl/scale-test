@@ -18,7 +18,7 @@
     "reset": "tsx scripts/reset.ts",
     "teardown": "tsx scripts/teardown.ts",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test scripts/lib/retryFetch.test.ts"
+    "test": "node --import tsx --test scripts/lib/*.test.ts"
   },
   "dependencies": {
     "@cycleplatform/api-client-typescript": "0.3.31"

@@ -28,7 +28,7 @@ The key needs to manage servers, environments, stacks, containers, DNS records a
 ```sh
 npm install
 npm run validate    # checks stacks, scenarios and the group file against Cycle's API spec (no credentials needed)
-npm test            # unit tests for the API retry rules (no credentials needed)
+npm test            # unit tests for the API retry rules and loadgen settings (no credentials needed)
 npm run preflight   # read-only: credentials, hub, cluster, servers, group, environments, DNS
 npm run status      # what's running in the lab and its estimated hourly cost
 npm run apply -- s1-cpu            # dry run: shows a scenario's scaling change to the app; add --yes to apply
@@ -114,6 +114,7 @@ Found running the tests:
 - **The RAM threshold follows container memory, not what the app thinks it holds.** In s2's first run the app's live allocations were 20–50 MB per instance, but Go kept freed memory, so container memory averaged ~131 MB (peak ~214 MB) against the 80M threshold and Cycle correctly kept adding instances (1 → 4). The app now returns freed memory to the OS straight away (`debug.FreeOSMemory`), so container memory tracks the load.
 - **The request threshold is a total over the window, with a minimum of 10,000.** Cycle rejects anything lower ("total requests cannot be below 10000"); the docs give no unit or minimum. That matches the stack spec's `requests_total`. `validate` now checks it.
 - **A Cycle update mid-run** (agent/compute `2026.11.02.4` → `2026.11.03.1`) made the API unreachable for a couple of minutes; workloads were not restarted. Every API call now waits and retries through outages of up to 5 minutes (2s, 4s, 8s… up to 30s apart): reads, container tasks and deletes always, creates only when the request clearly never reached Cycle, so nothing is duplicated. A delete that turns out to have already happened counts as done, and the runner's waits treat a failed check as "not yet". `npm test` covers the retry rules.
+- **A loadgen setting leaked from one scenario into the next** (a harness bug, not Cycle). The runner merged each scenario's settings into the loadgen's existing environment, so s3's first run inherited s2's `TIME_UNIT=10s` and sent 30 requests per 10s instead of per second: 4,725 in total, ~1,800 per 10m window against the 10,000 threshold, and Cycle correctly stayed at one instance. The runner now replaces every variable `loadgen/main.js` reads before each run (`npm test` checks the list against the script), and a `load_delivered` check compares k6's request count with what the scenario planned.
 
 Found on the first real builds:
 

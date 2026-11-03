@@ -17,6 +17,7 @@ import { API_URL, hubId } from "./lib/config.js";
 import { containerAction, findContainer, getContainer, listInstances, reconfigure, type Config, type Container } from "./lib/containers.js";
 import { durationMs, evaluate, fmtMs, type Check } from "./lib/evaluate.js";
 import { loadLab, repoPath } from "./lib/lab.js";
+import { loadgenEnv, plannedRequests } from "./lib/loadgen.js";
 import { resultsDir } from "./lib/ledger.js";
 import { Ndjson, Recorder, type Sample } from "./lib/recorder.js";
 
@@ -108,14 +109,42 @@ async function waitFor(what: string, check: () => Promise<boolean>, timeoutMs: n
   }
 }
 
-function withEnv(container: Container, env: Record<string, string>): Config {
+function currentEnv(container: Container): Record<string, string> {
+  return { ...(container.config.runtime?.environment_vars ?? {}) };
+}
+
+/** The container's config with its environment variables set to exactly `vars`. */
+function withEnvVars(container: Container, vars: Record<string, string>): Config {
   const config = container.config;
   return {
     ...config,
     runtime: {
       ...config.runtime,
-      environment_vars: { ...(config.runtime?.environment_vars ?? {}), ...env },
+      environment_vars: vars,
     } as Config["runtime"],
+  };
+}
+
+/**
+ * Did k6 send the load the scenario asked for? Catches a loadgen that ran with
+ * the wrong settings, which otherwise looks like "Cycle never scaled".
+ */
+function loadDelivered(env: Record<string, string>, k6: unknown): Check {
+  const planned = plannedRequests(env);
+  const expected = planned === undefined ? "n/a for this profile" : `≥90% of ${planned.toLocaleString("en-US")} requests`;
+  if (planned === undefined) {
+    return { name: "load_delivered", expected, observed: "not an arrival-rate profile", pass: null };
+  }
+  const sent = (k6 as { http_reqs?: { count?: number } } | undefined)?.http_reqs?.count;
+  if (sent === undefined) {
+    return { name: "load_delivered", expected, observed: "no k6 summary (loadgen logs not collected)", pass: null };
+  }
+  const share = Math.round((sent / planned) * 100);
+  return {
+    name: "load_delivered",
+    expected,
+    observed: `${sent.toLocaleString("en-US")} sent (${share}%)`,
+    pass: sent >= planned * 0.9,
   };
 }
 
@@ -188,7 +217,7 @@ async function main(): Promise<number> {
     }
     // The scaler reads INSTANCES at start; reconfiguring restarts it with the new answer.
     scaler = await getContainer(scaler.id);
-    await reconfigure(scaler, withEnv(scaler, { INSTANCES: String(n) }));
+    await reconfigure(scaler, withEnvVars(scaler, { ...currentEnv(scaler), INSTANCES: String(n) }));
   };
 
   try {
@@ -243,9 +272,10 @@ async function main(): Promise<number> {
     const load = scenario.load;
     if (load.type === "loadgen") {
       const env: Record<string, string> = { TARGET_URL: `https://${lab.dns.app}`, ...load.env };
-      await step(`configure loadgen: ${JSON.stringify(env)}`, async () => {
+      // Replace every loadgen knob, so nothing from an earlier scenario leaks in.
+      await step(`configure loadgen (only these knobs set): ${JSON.stringify(env)}`, async () => {
         const current = await getContainer((loadgen as Container).id);
-        await reconfigure(current, withEnv(current, env));
+        await reconfigure(current, withEnvVars(current, loadgenEnv(currentEnv(current), env)));
       });
       await step("start loadgen", () => containerAction(loadgen as Container, "start"));
       loadgenStarted = true;
@@ -373,6 +403,7 @@ async function main(): Promise<number> {
         observed: rerun === undefined ? "stayed stopped" : `loadgen ${rerun.loadgen && "state" in rerun.loadgen ? rerun.loadgen.state : "?"} again at ${rerun.at.slice(11, 19)}`,
         pass: rerun === undefined,
       });
+      checks.push(loadDelivered(scenario.load.env, k6));
     }
     if (checks.some((c) => c.pass === false)) {
       status = "FAIL";
