@@ -1,0 +1,43 @@
+{
+  "id": "s2-ram",
+  "title": "RAM threshold",
+  "purpose": "One 10 MB allocation every 10s held for 120s keeps ~120 MB on one instance; an 80M threshold should add instances until each holds less.",
+  "scale": {
+    "autoscale_group": null,
+    "window": "2m",
+    "instances": {
+      "max": 4,
+      "max_server": 4,
+      "min_ttl": "5m"
+    },
+    "thresholds": [
+      {
+        "type": "ram",
+        "details": {
+          "usage": "80M"
+        }
+      }
+    ]
+  },
+  "load": {
+    "type": "loadgen",
+    "env": {
+      "RAMP": "2m",
+      "HOLD": "12m",
+      "DOWN": "30s",
+      "SCENARIO": "ram",
+      "RATE": "1",
+      "TIME_UNIT": "10s",
+      "ALLOC_MB": "10",
+      "ALLOC_HOLD": "120s"
+    }
+  },
+  "observe_after_load": "15m",
+  "timeout": "50m",
+  "expect": {
+    "scale_up_within": "10m",
+    "peak_at_most": 5,
+    "respects_min_ttl": true,
+    "back_to_base_within": "15m"
+  }
+}

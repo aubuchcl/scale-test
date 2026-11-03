@@ -1,0 +1,16 @@
+{
+  "id": "s9-servers-down",
+  "title": "Server scale-down through the auto-scale group",
+  "purpose": "Runs straight after s8 with no load. Burst servers should go after min_ttl (15m) plus inactivity (10m), newest first (lifo).",
+  "requires": "s8-servers-up",
+  "reset": false,
+  "load": {
+    "type": "none"
+  },
+  "observe_after_load": "45m",
+  "timeout": "60m",
+  "expect": {
+    "servers_back_to_baseline_within": "45m",
+    "server_removal_order": "lifo"
+  }
+}

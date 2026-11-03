@@ -1,0 +1,40 @@
+{
+  "id": "s3-requests",
+  "title": "Request-count threshold",
+  "purpose": "The docs don't say whether 'requests' is per second or per window. 20 req/s against a threshold of 10 should trigger under either reading; whether it settles or runs to max tells us which.",
+  "scale": {
+    "autoscale_group": null,
+    "window": "10m",
+    "instances": {
+      "max": 4,
+      "max_server": 4,
+      "min_ttl": "5m"
+    },
+    "thresholds": [
+      {
+        "type": "network-requests",
+        "details": {
+          "requests": 10
+        }
+      }
+    ]
+  },
+  "load": {
+    "type": "loadgen",
+    "env": {
+      "RAMP": "2m",
+      "HOLD": "25m",
+      "DOWN": "30s",
+      "SCENARIO": "requests",
+      "RATE": "20"
+    }
+  },
+  "observe_after_load": "25m",
+  "timeout": "90m",
+  "expect": {
+    "scale_up_within": "25m",
+    "peak_at_most": 5,
+    "respects_min_ttl": true,
+    "back_to_base_within": "30m"
+  }
+}

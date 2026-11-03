@@ -1,0 +1,68 @@
+{
+  "version": "1.0",
+  "about": {
+    "version": "0.1.0",
+    "description": "Cycle auto-scaling test lab: k6 load generator. Runs one profile (SCENARIO) against TARGET_URL, then exits. https://github.com/aubuchcl/scale-test"
+  },
+  "containers": {
+    "loadgen": {
+      "name": "loadgen",
+      "stateful": false,
+      "image": {
+        "name": "scaletest-loadgen",
+        "origin": {
+          "type": "docker-file",
+          "details": {
+            "repo": {
+              "url": "https://github.com/aubuchcl/scale-test.git",
+              "branch": "main"
+            },
+            "context_dir": "loadgen"
+          }
+        }
+      },
+      "config": {
+        "network": {
+          "public": "egress-only",
+          "hostname": "loadgen"
+        },
+        "deploy": {
+          "instances": 1,
+          "constraints": {
+            "node": {
+              "tags": {
+                "all": ["vultr"]
+              }
+            }
+          },
+          "restart": {
+            "condition": "never",
+            "delay": "0s",
+            "max_attempts": 0
+          }
+        },
+        "resources": {
+          "cpu": {
+            "shares": {
+              "limit": 20,
+              "reserve": 4
+            }
+          },
+          "ram": {
+            "limit": "1G",
+            "reserve": "256M"
+          }
+        },
+        "runtime": {
+          "environment_vars": {
+            "TARGET_URL": "{{target-url}}",
+            "SCENARIO": "smoke",
+            "RAMP": "2m",
+            "HOLD": "15m",
+            "DOWN": "30s"
+          }
+        }
+      }
+    }
+  }
+}

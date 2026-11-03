@@ -1,0 +1,43 @@
+{
+  "id": "s0-webhook",
+  "title": "Webhook (custom threshold) smoke test",
+  "purpose": "Prove the whole loop with the one trigger we control exactly: the scaler answers N, Cycle should follow. Also records whether Cycle calls with GET or POST, how often, and whether N means total or additional instances.",
+  "scale": {
+    "autoscale_group": null,
+    "window": "2m",
+    "instances": {
+      "max": 4,
+      "max_server": 4,
+      "min_ttl": "5m"
+    },
+    "thresholds": [
+      {
+        "type": "custom",
+        "details": {
+          "webhook": "https://scale-test-scaler.cycle.chrisaubuchon.com/"
+        }
+      }
+    ]
+  },
+  "load": {
+    "type": "scaler",
+    "steps": [
+      {
+        "after": "0s",
+        "instances": 3
+      },
+      {
+        "after": "10m",
+        "instances": 1
+      }
+    ]
+  },
+  "observe_after_load": "15m",
+  "timeout": "45m",
+  "expect": {
+    "scale_up_within": "6m",
+    "peak_at_most": 5,
+    "respects_min_ttl": true,
+    "back_to_base_within": "15m"
+  }
+}

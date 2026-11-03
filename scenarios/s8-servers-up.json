@@ -1,0 +1,53 @@
+{
+  "id": "s8-servers-up",
+  "title": "Server scale-up through the auto-scale group",
+  "purpose": "Large CPU reserves (8 shares) mean the 20-share baseline holds ~2 instances. Demand for ~2.5 cores should exhaust it and make asl-burst add servers.",
+  "resources": {
+    "cpu": {
+      "shares": {
+        "limit": 10,
+        "reserve": 8
+      }
+    },
+    "ram": {
+      "limit": "512M",
+      "reserve": "512M"
+    }
+  },
+  "scale": {
+    "autoscale_group": "asl-burst",
+    "window": "2m",
+    "instances": {
+      "max": 4,
+      "max_server": 2,
+      "min_ttl": "5m"
+    },
+    "thresholds": [
+      {
+        "type": "cpu",
+        "details": {
+          "utilization": 50
+        }
+      }
+    ]
+  },
+  "load": {
+    "type": "loadgen",
+    "env": {
+      "RAMP": "2m",
+      "HOLD": "25m",
+      "DOWN": "30s",
+      "SCENARIO": "cpu",
+      "RATE": "25",
+      "BURN_MS": "100"
+    }
+  },
+  "observe_after_load": "0s",
+  "timeout": "60m",
+  "expect": {
+    "scale_up_within": "8m",
+    "servers_added_at_least": 1,
+    "servers_added_within": "25m",
+    "instances_on_new_servers_at_least": 1
+  }
+}

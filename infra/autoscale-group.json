@@ -1,0 +1,59 @@
+{
+  "name": "asl-burst",
+  "identifier": "asl-burst",
+  "cluster": "autoscale-lab",
+  "scale": {
+    "up": {
+      "maximum": 2
+    },
+    "down": {
+      "min_ttl": "15m",
+      "inactivity_period": "10m",
+      "method": "lifo"
+    }
+  },
+  "infrastructure": {
+    "models": [
+      {
+        "provider": "vultr-prod",
+        "integration_id": "65d665cbe1b6aec962e20d13",
+        "model_id": "5c8058fa4938523a9e339aee",
+        "priority": 1,
+        "locations": [
+          {
+            "id": "5c8058f44938523a9e339a88",
+            "availability_zones": []
+          }
+        ]
+      },
+      {
+        "provider": "vultr-prod",
+        "integration_id": "65d665cbe1b6aec962e20d13",
+        "model_id": "5c8058fa4938523a9e339aee",
+        "priority": 2,
+        "locations": [
+          {
+            "id": "5c8058f44938523a9e339a98",
+            "availability_zones": []
+          }
+        ]
+      }
+    ],
+    "provision": {
+      "features": {
+        "ssh": true,
+        "sftp": false,
+        "base_volume_gb": null,
+        "gateway": null
+      },
+      "constraints": {
+        "tags": ["asl-burst"],
+        "allow": {
+          "pool": false,
+          "services": false,
+          "overcommit": false
+        }
+      }
+    }
+  }
+}

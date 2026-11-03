@@ -1,0 +1,40 @@
+{
+  "id": "s7-min-ttl",
+  "title": "Minimum instance lifetime",
+  "purpose": "Short burst, then nothing. Scaled instances must survive their 10m min_ttl even though load is gone.",
+  "scale": {
+    "autoscale_group": null,
+    "window": "2m",
+    "instances": {
+      "max": 4,
+      "max_server": 4,
+      "min_ttl": "10m"
+    },
+    "thresholds": [
+      {
+        "type": "cpu",
+        "details": {
+          "utilization": 50
+        }
+      }
+    ]
+  },
+  "load": {
+    "type": "loadgen",
+    "env": {
+      "RAMP": "1m",
+      "HOLD": "5m",
+      "DOWN": "0s",
+      "SCENARIO": "cpu",
+      "RATE": "10",
+      "BURN_MS": "100"
+    }
+  },
+  "observe_after_load": "25m",
+  "timeout": "50m",
+  "expect": {
+    "scale_up_within": "6m",
+    "respects_min_ttl": true,
+    "back_to_base_within": "25m"
+  }
+}

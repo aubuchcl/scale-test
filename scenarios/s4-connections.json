@@ -1,0 +1,41 @@
+{
+  "id": "s4-connections",
+  "title": "Open-connection threshold",
+  "purpose": "150 VUs each hold one connection open; a threshold of 50 should add instances.",
+  "scale": {
+    "autoscale_group": null,
+    "window": "10m",
+    "instances": {
+      "max": 4,
+      "max_server": 4,
+      "min_ttl": "5m"
+    },
+    "thresholds": [
+      {
+        "type": "network-connections",
+        "details": {
+          "connections": 50
+        }
+      }
+    ]
+  },
+  "load": {
+    "type": "loadgen",
+    "env": {
+      "RAMP": "2m",
+      "HOLD": "25m",
+      "DOWN": "30s",
+      "SCENARIO": "connections",
+      "VUS": "150",
+      "HOLD_S": "30"
+    }
+  },
+  "observe_after_load": "25m",
+  "timeout": "90m",
+  "expect": {
+    "scale_up_within": "25m",
+    "peak_at_most": 5,
+    "respects_min_ttl": true,
+    "back_to_base_within": "30m"
+  }
+}

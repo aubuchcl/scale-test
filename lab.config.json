@@ -1,0 +1,71 @@
+{
+  "$comment": "Everything the scripts need to know about the lab except secrets. The API key and hub ID come from $DEVAPI and $DEVHUBID; the API URL is fixed in scripts/lib/config.ts.",
+  "hub": {
+    "id": "5a14ddd8b6393d0001976f44",
+    "name": "compute dev"
+  },
+  "prefix": "asl",
+  "cluster": "autoscale-lab",
+  "repo": {
+    "url": "https://github.com/aubuchcl/scale-test.git",
+    "branch": "main"
+  },
+  "dns": {
+    "zone": "cycle.chrisaubuchon.com",
+    "app": "scale-test.cycle.chrisaubuchon.com",
+    "scaler": "scale-test-scaler.cycle.chrisaubuchon.com"
+  },
+  "environments": {
+    "lab": {
+      "identifier": "asl-lab",
+      "name": "Autoscale Lab",
+      "cluster": "autoscale-lab"
+    },
+    "loadgen": {
+      "identifier": "asl-loadgen",
+      "name": "Autoscale Loadgen",
+      "cluster": "development"
+    }
+  },
+  "stacks": {
+    "target": {
+      "identifier": "asl-target-stack",
+      "name": "Autoscale Lab Target",
+      "file": "stacks/target.json",
+      "environment": "lab",
+      "variables": {}
+    },
+    "loadgen": {
+      "identifier": "asl-loadgen-stack",
+      "name": "Autoscale Lab Loadgen",
+      "file": "stacks/loadgen.json",
+      "environment": "loadgen",
+      "variables": {
+        "target-url": "http://scale-test.cycle.chrisaubuchon.com"
+      }
+    }
+  },
+  "baseline_server": {
+    "provider": "vultr-prod",
+    "model": "vc2-2c-4gb",
+    "model_id": "5c8058fa4938523a9e339af2",
+    "location": "ewr",
+    "location_id": "5c8058f44938523a9e339a88",
+    "tags": ["asl-base"],
+    "allow": {
+      "pool": false,
+      "services": true,
+      "overcommit": false
+    }
+  },
+  "autoscale_group": {
+    "identifier": "asl-burst",
+    "file": "infra/autoscale-group.json",
+    "tags": ["asl-burst"]
+  },
+  "cost_estimate_usd_per_hour": {
+    "$comment": "Vultr list prices divided by ~672 hours; estimates only, billed by Vultr.",
+    "vc2-2c-4gb": 0.03,
+    "vc2-1c-2gb": 0.015
+  }
+}

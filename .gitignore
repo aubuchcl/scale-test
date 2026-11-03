@@ -1,0 +1,7 @@
+node_modules/
+.cache/
+# Run records stay on the machine that ran them: they contain hub IDs,
+# server hostnames and IPs, and this repo is public.
+results/
+*.log
+.env

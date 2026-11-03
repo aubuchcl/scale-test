@@ -1,0 +1,142 @@
+{
+  "version": "1.0",
+  "about": {
+    "version": "0.1.0",
+    "description": "Cycle auto-scaling test lab: the app under test plus the webhook scaler for the custom threshold. https://github.com/aubuchcl/scale-test"
+  },
+  "containers": {
+    "app": {
+      "name": "app",
+      "stateful": false,
+      "image": {
+        "name": "scaletest",
+        "origin": {
+          "type": "docker-file",
+          "details": {
+            "repo": {
+              "url": "https://github.com/aubuchcl/scale-test.git",
+              "branch": "main"
+            },
+            "context_dir": "app"
+          }
+        }
+      },
+      "config": {
+        "network": {
+          "public": "enable",
+          "hostname": "app",
+          "ports": ["80:80", "443:80"]
+        },
+        "deploy": {
+          "instances": 1,
+          "strategy": "resource-density",
+          "constraints": {
+            "node": {
+              "tags": {
+                "any": ["asl-base", "asl-burst"]
+              }
+            }
+          },
+          "restart": {
+            "condition": "always",
+            "delay": "10s",
+            "max_attempts": 5
+          }
+        },
+        "scaling": {
+          "autoscale_group": null,
+          "window": "5m",
+          "instances": {
+            "max": 4,
+            "max_server": 4,
+            "min_ttl": "5m"
+          },
+          "thresholds": [
+            {
+              "type": "cpu",
+              "details": {
+                "utilization": 80
+              }
+            }
+          ]
+        },
+        "resources": {
+          "cpu": {
+            "shares": {
+              "limit": 10,
+              "reserve": 2
+            }
+          },
+          "ram": {
+            "limit": "256M",
+            "reserve": "128M"
+          }
+        },
+        "runtime": {
+          "environment_vars": {
+            "MODE": "app",
+            "MAX_ALLOC_MB": "200",
+            "STATS_INTERVAL": "10s"
+          }
+        }
+      }
+    },
+    "scaler": {
+      "name": "scaler",
+      "stateful": false,
+      "image": {
+        "name": "scaletest",
+        "origin": {
+          "type": "docker-file",
+          "details": {
+            "repo": {
+              "url": "https://github.com/aubuchcl/scale-test.git",
+              "branch": "main"
+            },
+            "context_dir": "app"
+          }
+        }
+      },
+      "config": {
+        "network": {
+          "public": "enable",
+          "hostname": "scaler",
+          "ports": ["80:80", "443:80"]
+        },
+        "deploy": {
+          "instances": 1,
+          "constraints": {
+            "node": {
+              "tags": {
+                "any": ["asl-base"]
+              }
+            }
+          },
+          "restart": {
+            "condition": "always",
+            "delay": "10s",
+            "max_attempts": 5
+          }
+        },
+        "resources": {
+          "cpu": {
+            "shares": {
+              "limit": 5,
+              "reserve": 1
+            }
+          },
+          "ram": {
+            "limit": "64M",
+            "reserve": "32M"
+          }
+        },
+        "runtime": {
+          "environment_vars": {
+            "MODE": "scaler",
+            "INSTANCES": "1"
+          }
+        }
+      }
+    }
+  }
+}

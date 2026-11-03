@@ -1,0 +1,41 @@
+{
+  "id": "s1-cpu",
+  "title": "CPU threshold",
+  "purpose": "~0.8 core of demand against a 1-core limit is ~80% on one instance, so a 50% threshold should add instances until it settles around 2.",
+  "scale": {
+    "autoscale_group": null,
+    "window": "2m",
+    "instances": {
+      "max": 4,
+      "max_server": 4,
+      "min_ttl": "5m"
+    },
+    "thresholds": [
+      {
+        "type": "cpu",
+        "details": {
+          "utilization": 50
+        }
+      }
+    ]
+  },
+  "load": {
+    "type": "loadgen",
+    "env": {
+      "RAMP": "2m",
+      "HOLD": "12m",
+      "DOWN": "30s",
+      "SCENARIO": "cpu",
+      "RATE": "8",
+      "BURN_MS": "100"
+    }
+  },
+  "observe_after_load": "15m",
+  "timeout": "50m",
+  "expect": {
+    "scale_up_within": "8m",
+    "peak_at_most": 5,
+    "respects_min_ttl": true,
+    "back_to_base_within": "15m"
+  }
+}

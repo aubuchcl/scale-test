@@ -1,0 +1,42 @@
+{
+  "id": "s5-throughput",
+  "title": "Throughput threshold (private interface)",
+  "purpose": "2 x 5 MB responses per second is ~80 Mbps through the load balancer (eth-priv); a 20mbps threshold should add instances.",
+  "scale": {
+    "autoscale_group": null,
+    "window": "10m",
+    "instances": {
+      "max": 4,
+      "max_server": 4,
+      "min_ttl": "5m"
+    },
+    "thresholds": [
+      {
+        "type": "network-throughput",
+        "details": {
+          "private": true,
+          "bandwidth": "20mbps"
+        }
+      }
+    ]
+  },
+  "load": {
+    "type": "loadgen",
+    "env": {
+      "RAMP": "2m",
+      "HOLD": "25m",
+      "DOWN": "30s",
+      "SCENARIO": "throughput",
+      "RATE": "2",
+      "KB": "5120"
+    }
+  },
+  "observe_after_load": "25m",
+  "timeout": "90m",
+  "expect": {
+    "scale_up_within": "25m",
+    "peak_at_most": 5,
+    "respects_min_ttl": true,
+    "back_to_base_within": "30m"
+  }
+}

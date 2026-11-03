@@ -1,0 +1,27 @@
+{
+  "name": "scale-test",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Reproducible test lab for Cycle container auto-scaling and auto-scale groups",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "preflight": "tsx scripts/preflight.ts",
+    "status": "tsx scripts/status.ts",
+    "validate": "tsx scripts/validate.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@cycleplatform/api-client-typescript": "0.3.31"
+  },
+  "devDependencies": {
+    "@apidevtools/json-schema-ref-parser": "11.7.2",
+    "@types/node": "22.20.5",
+    "ajv": "8.17.1",
+    "ajv-formats": "3.0.1",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3"
+  }
+}
