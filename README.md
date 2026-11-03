@@ -105,4 +105,4 @@ Found while building against the API spec at `2bd5dd1`:
 Found on the first real builds:
 
 - Cycle rejects a restart `delay` under 5s, even with `condition: "never"`; the schema allows any duration. `validate` now checks for it.
-- With `context_dir` set and no `build_file`, the image build failed in buildkit. The stacks now build from the repo root with an explicit `build_file` (`app/Dockerfile`, `loadgen/Dockerfile`), which reads the same whichever way Cycle resolves the path.
+- `build_file` must start with `/` ("Build file must begin with a '/'"); the schema doesn't say. The first build used a relative `context_dir: "app"` with no `build_file` and failed inside buildkit with no detail. The stacks now build from the repo root with `build_file` `/app/Dockerfile` and `/loadgen/Dockerfile`, and `validate` checks both paths start with `/`.

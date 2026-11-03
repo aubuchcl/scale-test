@@ -17,7 +17,7 @@
               "url": "https://github.com/aubuchcl/scale-test.git",
               "branch": "main"
             },
-            "build_file": "loadgen/Dockerfile"
+            "build_file": "/loadgen/Dockerfile"
           }
         }
       },

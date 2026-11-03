@@ -91,7 +91,13 @@ function fail(label: string, message: string): void {
 }
 
 type StackFile = {
-  containers: Record<string, { config?: { deploy?: { restart?: { delay?: string } } } }>;
+  containers: Record<
+    string,
+    {
+      image?: { origin?: { details?: { build_file?: string | null; context_dir?: string | null } } };
+      config?: { deploy?: { restart?: { delay?: string } } };
+    }
+  >;
 };
 
 function durationSeconds(value: string): number | undefined {
@@ -106,6 +112,13 @@ function durationSeconds(value: string): number | undefined {
 /** Rules Cycle enforces at build time that the published schema doesn't express. */
 function checkCycleRules(label: string, spec: StackFile): void {
   for (const [name, container] of Object.entries(spec.containers)) {
+    const details = container.image?.origin?.details;
+    for (const key of ["build_file", "context_dir"] as const) {
+      const path = details?.[key];
+      if (typeof path === "string" && !path.startsWith("/")) {
+        fail(label, `${name}: ${key} "${path}" must start with "/" (Cycle: "Build file must begin with a '/'"), e.g. "/${path}"`);
+      }
+    }
     const delay = container.config?.deploy?.restart?.delay;
     if (delay === undefined) {
       continue;

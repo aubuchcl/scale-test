@@ -17,7 +17,7 @@
               "url": "https://github.com/aubuchcl/scale-test.git",
               "branch": "main"
             },
-            "build_file": "app/Dockerfile"
+            "build_file": "/app/Dockerfile"
           }
         }
       },
@@ -99,7 +99,7 @@
               "url": "https://github.com/aubuchcl/scale-test.git",
               "branch": "main"
             },
-            "build_file": "app/Dockerfile"
+            "build_file": "/app/Dockerfile"
           }
         }
       },
