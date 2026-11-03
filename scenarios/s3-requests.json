@@ -1,7 +1,7 @@
 {
   "id": "s3-requests",
   "title": "Request-count threshold",
-  "purpose": "The docs don't say whether 'requests' is per second or per window. 20 req/s against a threshold of 10 should trigger under either reading; whether it settles or runs to max tells us which.",
+  "purpose": "Cycle counts total requests over the window and requires at least 10,000 (\"total requests cannot be below 10000\"). 30 req/s is 18,000 per 10m window on one instance, over the threshold. If the count is per instance, a second instance halves it to 9,000 each and it settles at 2. If it counts all instances together, the total stays at 18,000 and it keeps scaling to max; peak_at_most 3 flags that.",
   "scale": {
     "autoscale_group": null,
     "window": "10m",
@@ -14,7 +14,7 @@
       {
         "type": "network-requests",
         "details": {
-          "requests": 10
+          "requests": 10000
         }
       }
     ]
@@ -26,15 +26,15 @@
       "HOLD": "25m",
       "DOWN": "30s",
       "SCENARIO": "requests",
-      "RATE": "20"
+      "RATE": "30"
     }
   },
   "observe_after_load": "25m",
   "timeout": "90m",
   "expect": {
-    "scale_up_within": "25m",
-    "peak_at_most": 5,
+    "scale_up_within": "15m",
+    "peak_at_most": 3,
     "respects_min_ttl": true,
-    "back_to_base_within": "30m"
+    "back_to_base_within": "25m"
   }
 }

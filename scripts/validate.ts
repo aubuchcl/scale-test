@@ -109,6 +109,16 @@ function durationSeconds(value: string): number | undefined {
   return parts.reduce((total, [, n, unit]) => total + Number(n) * (units[unit ?? "s"] ?? 0), 0);
 }
 
+/** Threshold minimums Cycle enforces on reconfigure that the published schema doesn't express. */
+function checkScaleRules(label: string, scale: unknown): void {
+  const thresholds = (scale as { thresholds?: { type?: string; details?: Record<string, unknown> }[] }).thresholds ?? [];
+  for (const t of thresholds) {
+    if (t.type === "network-requests" && Number(t.details?.requests) < 10_000) {
+      fail(label, `network-requests threshold ${String(t.details?.requests)} is below 10000; Cycle rejects it ("total requests cannot be below 10000")`);
+    }
+  }
+}
+
 /** Rules Cycle enforces at build time that the published schema doesn't express. */
 function checkCycleRules(label: string, spec: StackFile): void {
   for (const [name, container] of Object.entries(spec.containers)) {
@@ -170,6 +180,7 @@ async function main(): Promise<void> {
     }
     if (s.scale !== undefined) {
       check(`${label} scale`, containerScale, s.scale);
+      checkScaleRules(label, s.scale);
     }
     if (s.resources !== undefined) {
       check(`${label} resources`, containerResources, s.resources);

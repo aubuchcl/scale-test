@@ -74,7 +74,7 @@ Every response carries `X-Instance-Id` and `X-Server-Id`, and the app logs a `st
 | s0 | Webhook (custom) threshold: the whole loop, GET vs POST, total vs additional | scaler answers 3, then 1 |
 | s1 | CPU | `/burn` ramp |
 | s2 | RAM | `/alloc` at 1 per 10s |
-| s3 | Request count (units undocumented; the run tells us) | 20 req/s |
+| s3 | Request count: a **total over the window**, minimum 10,000; is it per instance or across all? | 30 req/s (18,000 per 10m window) |
 | s4 | Open connections | 150 held connections |
 | s5 | Throughput on the private interface | ~80 Mbps of `/bytes` |
 | s6 | `max` and `max_server` | heavy CPU with max 2 / max_server 2 |
@@ -100,7 +100,7 @@ Found while building against the API spec at `2bd5dd1`:
 
 - The portal docs list **Min** and **Delta** for container auto-scaling; the API's `ContainerScale` has only `max`, `max_server`, `min_ttl`.
 - `max_server` is described as a *minimum* per server in the API and a hard *maximum* in the portal (s6 tells them apart).
-- Request and connection thresholds are `requests` / `connections` in the API but `requests_total` / `connections_total` in the stack spec.
+- Request and connection thresholds are `requests` / `connections` in the API but `requests_total` / `connections_total` in the stack spec. Cycle's own error calls requests a total (see below).
 - The stack spec's threshold `oneOf` leaves out `custom` (it's only in the discriminator mapping), so a stack file with a webhook threshold fails strict validation. The scenarios apply `scale` through the API instead.
 - Stack-spec fields typed `oneOf: [string, StackVariable]` reject every `{{variable}}`, since a variable is also a string. `validate` fills variables in first, as Cycle does at build time.
 - The webhook is documented as a GET (portal) and a POST (`WebhookURL` in the API spec).
@@ -112,6 +112,7 @@ Found running the tests:
 - **Cycle restarted a container whose restart policy is `never`.** In s1 the loadgen exited cleanly at 18:00:43 and Cycle started it again at 18:10:16 (`CYCLE_AUTO_START=yes`), re-running the load. The runner now stops the loadgen explicitly after each run and fails a `load_ran_once` check if it runs again.
 - **The custom (webhook) threshold left the last auto-scaled instance behind** (s0), even when answering 0; CPU scaling (s1) removed it normally.
 - **The RAM threshold follows container memory, not what the app thinks it holds.** In s2's first run the app's live allocations were 20–50 MB per instance, but Go kept freed memory, so container memory averaged ~131 MB (peak ~214 MB) against the 80M threshold and Cycle correctly kept adding instances (1 → 4). The app now returns freed memory to the OS straight away (`debug.FreeOSMemory`), so container memory tracks the load.
+- **The request threshold is a total over the window, with a minimum of 10,000.** Cycle rejects anything lower ("total requests cannot be below 10000"); the docs give no unit or minimum. That matches the stack spec's `requests_total`. `validate` now checks it.
 - **A Cycle update mid-run** (agent/compute `2026.11.02.4` → `2026.11.03.1`) made the API unreachable for a couple of minutes; workloads were not restarted. Every API call now waits and retries through outages of up to 5 minutes (2s, 4s, 8s… up to 30s apart): reads, container tasks and deletes always, creates only when the request clearly never reached Cycle, so nothing is duplicated. A delete that turns out to have already happened counts as done, and the runner's waits treat a failed check as "not yet". `npm test` covers the retry rules.
 
 Found on the first real builds:
