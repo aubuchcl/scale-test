@@ -101,3 +101,8 @@ Found while building against the API spec at `2bd5dd1`:
 - The webhook is documented as a GET (portal) and a POST (`WebhookURL` in the API spec).
 - `ContainerScale`'s description reads "Network configuration for a container".
 - The CPU threshold is measured against the CPU **limit**, so the app always has one set.
+
+Found on the first real builds:
+
+- Cycle rejects a restart `delay` under 5s, even with `condition: "never"`; the schema allows any duration. `validate` now checks for it.
+- With `context_dir` set and no `build_file`, the image build failed in buildkit. The stacks now build from the repo root with an explicit `build_file` (`app/Dockerfile`, `loadgen/Dockerfile`), which reads the same whichever way Cycle resolves the path.

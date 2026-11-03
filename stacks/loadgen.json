@@ -17,7 +17,7 @@
               "url": "https://github.com/aubuchcl/scale-test.git",
               "branch": "main"
             },
-            "context_dir": "loadgen"
+            "build_file": "loadgen/Dockerfile"
           }
         }
       },
@@ -31,13 +31,15 @@
           "constraints": {
             "node": {
               "tags": {
-                "all": ["vultr"]
+                "all": [
+                  "vultr"
+                ]
               }
             }
           },
           "restart": {
             "condition": "never",
-            "delay": "0s",
+            "delay": "5s",
             "max_attempts": 0
           }
         },

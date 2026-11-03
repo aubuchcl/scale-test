@@ -17,7 +17,7 @@
               "url": "https://github.com/aubuchcl/scale-test.git",
               "branch": "main"
             },
-            "context_dir": "app"
+            "build_file": "app/Dockerfile"
           }
         }
       },
@@ -25,7 +25,10 @@
         "network": {
           "public": "enable",
           "hostname": "app",
-          "ports": ["80:80", "443:80"]
+          "ports": [
+            "80:80",
+            "443:80"
+          ]
         },
         "deploy": {
           "instances": 1,
@@ -33,7 +36,10 @@
           "constraints": {
             "node": {
               "tags": {
-                "any": ["asl-base", "asl-burst"]
+                "any": [
+                  "asl-base",
+                  "asl-burst"
+                ]
               }
             }
           },
@@ -93,7 +99,7 @@
               "url": "https://github.com/aubuchcl/scale-test.git",
               "branch": "main"
             },
-            "context_dir": "app"
+            "build_file": "app/Dockerfile"
           }
         }
       },
@@ -101,14 +107,19 @@
         "network": {
           "public": "enable",
           "hostname": "scaler",
-          "ports": ["80:80", "443:80"]
+          "ports": [
+            "80:80",
+            "443:80"
+          ]
         },
         "deploy": {
           "instances": 1,
           "constraints": {
             "node": {
               "tags": {
-                "any": ["asl-base"]
+                "any": [
+                  "asl-base"
+                ]
               }
             }
           },

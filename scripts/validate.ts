@@ -90,6 +90,33 @@ function fail(label: string, message: string): void {
   console.log(`  FAIL  ${label}: ${message}`);
 }
 
+type StackFile = {
+  containers: Record<string, { config?: { deploy?: { restart?: { delay?: string } } } }>;
+};
+
+function durationSeconds(value: string): number | undefined {
+  const units: Record<string, number> = { ms: 0.001, s: 1, m: 60, h: 3600, d: 86400 };
+  const parts = [...value.matchAll(/(\d+)(ms|s|m|h|d)/g)];
+  if (parts.length === 0) {
+    return undefined;
+  }
+  return parts.reduce((total, [, n, unit]) => total + Number(n) * (units[unit ?? "s"] ?? 0), 0);
+}
+
+/** Rules Cycle enforces at build time that the published schema doesn't express. */
+function checkCycleRules(label: string, spec: StackFile): void {
+  for (const [name, container] of Object.entries(spec.containers)) {
+    const delay = container.config?.deploy?.restart?.delay;
+    if (delay === undefined) {
+      continue;
+    }
+    const seconds = durationSeconds(delay);
+    if (seconds !== undefined && seconds < 5) {
+      fail(label, `${name}: restart delay ${delay} is under 5s; Cycle rejects the build ("restart delay must be at least 5 seconds"), even with condition "never"`);
+    }
+  }
+}
+
 async function main(): Promise<void> {
   ensureApiSpec();
   const lab = loadLab();
@@ -109,7 +136,9 @@ async function main(): Promise<void> {
       fail(stack.file, `no value in lab.config.json for ${leftover.join(", ")}`);
       continue;
     }
-    check(stack.file, stackSpec, JSON.parse(rendered));
+    const spec = JSON.parse(rendered) as StackFile;
+    check(stack.file, stackSpec, spec);
+    checkCycleRules(stack.file, spec);
   }
 
   console.log("Auto-scale group");
