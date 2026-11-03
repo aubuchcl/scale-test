@@ -11,6 +11,7 @@
     "preflight": "tsx scripts/preflight.ts",
     "status": "tsx scripts/status.ts",
     "validate": "tsx scripts/validate.ts",
+    "stacks": "tsx scripts/stacks.ts",
     "teardown": "tsx scripts/teardown.ts",
     "typecheck": "tsc --noEmit"
   },
