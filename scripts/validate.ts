@@ -116,6 +116,12 @@ function checkScaleRules(label: string, scale: unknown): void {
     if (t.type === "network-requests" && Number(t.details?.requests) < 10_000) {
       fail(label, `network-requests threshold ${String(t.details?.requests)} is below 10000; Cycle rejects it ("total requests cannot be below 10000")`);
     }
+    if (t.type === "cpu" && Number(t.details?.utilization) < 50) {
+      fail(label, `cpu threshold ${String(t.details?.utilization)}% is below 50; Cycle rejects it ("utilization percent cannot be below 50")`);
+    }
+    if (t.type === "network-connections" && Number(t.details?.connections) < 100) {
+      fail(label, `network-connections threshold ${String(t.details?.connections)} is below 100; Cycle rejects it ("total connections cannot be below 100")`);
+    }
   }
 }
 
@@ -184,6 +190,11 @@ async function main(): Promise<void> {
     }
     if (s.resources !== undefined) {
       check(`${label} resources`, containerResources, s.resources);
+    }
+    // Without its own resources, a scenario inherits whatever the previous one
+    // left on the app (s8 leaves 8-share reserves, which caps a single server at 2 instances).
+    if (s.scale !== undefined && s.resources === undefined) {
+      fail(label, "sets scale but no resources, so it would inherit the previous scenario's; add a resources block");
     }
 
     const load = s.load as { type?: string } | undefined;

@@ -2,6 +2,18 @@
   "id": "s3-requests",
   "title": "Request-count threshold",
   "purpose": "Cycle counts total requests over the window and requires at least 10,000 (\"total requests cannot be below 10000\"). 30 req/s is 18,000 per 10m window on one instance, over the threshold. If the count is per instance, a second instance halves it to 9,000 each and it settles at 2. If it counts all instances together, the total stays at 18,000 and it keeps scaling to max; peak_at_most 3 flags that.",
+  "resources": {
+    "cpu": {
+      "shares": {
+        "limit": 10,
+        "reserve": 2
+      }
+    },
+    "ram": {
+      "limit": "256M",
+      "reserve": "128M"
+    }
+  },
   "scale": {
     "autoscale_group": null,
     "window": "10m",

@@ -1,0 +1,54 @@
+{
+  "id": "s5b-throughput-public",
+  "title": "Throughput threshold (public interface)",
+  "purpose": "Same load as s5 (~84 Mbps of 5 MB responses through the load balancer), but the threshold watches the public interface (eth-pub) instead of the private one. Per Cycle's docs, load-balancer traffic uses eth-priv and eth-pub carries only the container's own internet traffic, so this should not scale either. If it does, the two interfaces are swapped in the threshold or in the docs.",
+  "resources": {
+    "cpu": {
+      "shares": {
+        "limit": 10,
+        "reserve": 2
+      }
+    },
+    "ram": {
+      "limit": "256M",
+      "reserve": "128M"
+    }
+  },
+  "scale": {
+    "autoscale_group": null,
+    "window": "10m",
+    "instances": {
+      "max": 4,
+      "max_server": 4,
+      "min_ttl": "5m"
+    },
+    "thresholds": [
+      {
+        "type": "network-throughput",
+        "details": {
+          "private": false,
+          "bandwidth": "20mbps"
+        }
+      }
+    ]
+  },
+  "load": {
+    "type": "loadgen",
+    "env": {
+      "RAMP": "2m",
+      "HOLD": "25m",
+      "DOWN": "30s",
+      "SCENARIO": "throughput",
+      "RATE": "2",
+      "KB": "5120"
+    }
+  },
+  "observe_after_load": "25m",
+  "timeout": "90m",
+  "expect": {
+    "scale_up_within": "25m",
+    "peak_at_most": 5,
+    "respects_min_ttl": true,
+    "back_to_base_within": "30m"
+  }
+}

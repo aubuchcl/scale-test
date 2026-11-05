@@ -2,6 +2,18 @@
   "id": "s1-cpu",
   "title": "CPU threshold",
   "purpose": "~0.8 core of demand against a 1-core limit is ~80% on one instance, so a 50% threshold should add instances until it settles around 2.",
+  "resources": {
+    "cpu": {
+      "shares": {
+        "limit": 10,
+        "reserve": 2
+      }
+    },
+    "ram": {
+      "limit": "256M",
+      "reserve": "128M"
+    }
+  },
   "scale": {
     "autoscale_group": null,
     "window": "2m",

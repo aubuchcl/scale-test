@@ -1,7 +1,19 @@
 {
   "id": "s4-connections",
   "title": "Open-connection threshold",
-  "purpose": "150 VUs each hold one connection open; a threshold of 50 should add instances.",
+  "purpose": "150 clients each hold a connection for 30s, then reconnect, against a threshold of 100 (Cycle's minimum: 'total connections cannot be below 100'). If Cycle counts open connections per instance, one instance sees ~150, two see ~75 each, and it settles at 2. If it counts every connection opened over the window (~3,000 per 10m), it keeps scaling to the max of 5.",
+  "resources": {
+    "cpu": {
+      "shares": {
+        "limit": 10,
+        "reserve": 2
+      }
+    },
+    "ram": {
+      "limit": "256M",
+      "reserve": "128M"
+    }
+  },
   "scale": {
     "autoscale_group": null,
     "window": "10m",
@@ -14,7 +26,7 @@
       {
         "type": "network-connections",
         "details": {
-          "connections": 50
+          "connections": 100
         }
       }
     ]

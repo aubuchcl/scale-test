@@ -2,6 +2,18 @@
   "id": "s0-webhook",
   "title": "Webhook (custom threshold) smoke test",
   "purpose": "Prove the whole loop with the one trigger we control exactly: the scaler answers N, Cycle should follow. Also records whether Cycle calls with GET or POST, how often, and whether N means total or additional instances.",
+  "resources": {
+    "cpu": {
+      "shares": {
+        "limit": 10,
+        "reserve": 2
+      }
+    },
+    "ram": {
+      "limit": "256M",
+      "reserve": "128M"
+    }
+  },
   "scale": {
     "autoscale_group": null,
     "window": "2m",

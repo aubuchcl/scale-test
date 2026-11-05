@@ -497,11 +497,21 @@ function renderReport(r: {
     inGap = false;
     const burst = s.servers.filter((x) => x.role === "burst" && x.state !== "deleted").length;
     if (s.app.count !== last || burst !== lastBurst) {
+      // Same rule as the recorder's count: running or starting. Instances in
+      // other states (new, stopping, …) are listed separately so the numbers agree.
       const perServer = new Map<string, number>();
+      const otherStates = new Map<string, number>();
       for (const i of s.app.instances) {
-        perServer.set(i.server_id.slice(-6), (perServer.get(i.server_id.slice(-6)) ?? 0) + 1);
+        if (i.state === "running" || i.state === "starting") {
+          perServer.set(i.server_id.slice(-6), (perServer.get(i.server_id.slice(-6)) ?? 0) + 1);
+        } else {
+          otherStates.set(i.state, (otherStates.get(i.state) ?? 0) + 1);
+        }
       }
-      const spread = [...perServer.entries()].map(([id, n]) => `${n} on …${id}`).join(", ");
+      const spread = [
+        ...[...perServer.entries()].map(([id, n]) => `${n} on …${id}`),
+        ...[...otherStates.entries()].map(([state, n]) => `${n} ${state}`),
+      ].join(", ");
       lines.push(`- ${hhmmss(s.at)}  **${s.app.count}** instance(s)${spread ? ` (${spread})` : ""}${burst > 0 ? `; ${burst} burst server(s)` : ""}`);
       last = s.app.count;
       lastBurst = burst;

@@ -1,7 +1,19 @@
 {
   "id": "s6-limits",
   "title": "max and max_server",
-  "purpose": "Demand for ~3 cores with max 2 and max_server 2, all on one server. If max_server is a per-server cap, the peak is 2; if it is a minimum (as the API spec says), the peak is 3 (base + max).",
+  "purpose": "Demand for ~3 cores against a CPU threshold of 50% (Cycle's minimum), with max 2 and max_server 2, all on one server with room for many more instances. Each instance is capped at 1 core, so Cycle keeps wanting more. If max_server is a per-server cap, the peak is 2; if it is a minimum (as the API spec says), the peak is 3 (base + max).",
+  "resources": {
+    "cpu": {
+      "shares": {
+        "limit": 10,
+        "reserve": 2
+      }
+    },
+    "ram": {
+      "limit": "256M",
+      "reserve": "128M"
+    }
+  },
   "scale": {
     "autoscale_group": null,
     "window": "2m",
@@ -14,7 +26,7 @@
       {
         "type": "cpu",
         "details": {
-          "utilization": 30
+          "utilization": 50
         }
       }
     ]

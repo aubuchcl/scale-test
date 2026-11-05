@@ -2,6 +2,18 @@
   "id": "s2-ram",
   "title": "RAM threshold",
   "purpose": "One 10 MB allocation every 10s held for 120s keeps ~120 MB on one instance; an 80M threshold should add instances until each holds less.",
+  "resources": {
+    "cpu": {
+      "shares": {
+        "limit": 10,
+        "reserve": 2
+      }
+    },
+    "ram": {
+      "limit": "256M",
+      "reserve": "128M"
+    }
+  },
   "scale": {
     "autoscale_group": null,
     "window": "2m",
